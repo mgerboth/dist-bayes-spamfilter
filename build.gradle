@@ -13,21 +13,20 @@ plugins {
 
 mainClassName  = "main.MainFloat"
 
-sourceSets {
-    main {
-        resources {
-            srcDirs = ["src/main/java", "src/main/resources"]
-        }
-    }
-}
 
 repositories {
     jcenter()
 }
+sourceSets {
+	main {
+		resources {
+			srcDirs = ["src/main/resources"]
+		}
+	}
+}
+
 
 sourceCompatibility = 11
 targetCompatibility = 11
 compileJava.options.encoding = 'UTF-8'
 compileTestJava.options.encoding = 'UTF-8'
-
-}
