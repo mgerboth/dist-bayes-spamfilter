@@ -8,11 +8,15 @@ import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.Map;
 
-public class MainFloat {
+public class BayesSpamfilter {
 
-    private static final float probabilityOfSpam = 0.7f;
-    private static final float probabilityOfHam = 0.3f;
+    private static final float PROBABILITY_OF_SPAM = 0.7f;
 
+    private static final float PROBABILITY_OF_HAM = 0.3f;
+
+    public static final float THRESHOLD = 0.5f;
+
+    public static final float ALPHA = 0.02f;
 
     static Map<String, Integer> spamBibliography;
     static Map<String, Integer> hamBibliography;
@@ -35,11 +39,21 @@ public class MainFloat {
         String hamTest = "./src/main/resources/ham-test";
         String spamTest = "./src/main/resources/spam-test";
 
-        float percentageOfSpamInHam = ((float) getNumberOfSpamInDirectory(hamTest) / (float) getNumberOfFilesInDirectory(hamTest)) * 100;
-        float percentageOfSpamInSpam = ((float) getNumberOfSpamInDirectory(spamTest) / (float) getNumberOfFilesInDirectory(spamTest)) * 100;
+        float spamInSpam = getNumberOfSpamInDirectory(spamTest);
+        float spamInHam = getNumberOfSpamInDirectory(hamTest);
+
+        float filesInSpam = getNumberOfFilesInDirectory(spamTest);
+        float filesInHam = getNumberOfFilesInDirectory(hamTest);
+
+        float percentageOfSpamInSpam = spamInSpam / filesInSpam * 100;
+        float percentageOfSpamInHam = spamInHam / filesInHam * 100;
+
 
         System.out.println(percentageOfSpamInHam + "% Spam in '" + hamTest + "'.");
         System.out.println(percentageOfSpamInSpam + "% Spam in '" + spamTest + "'.");
+        System.out.println("Alpha = " + ALPHA + ", Schwellenwert = " + THRESHOLD);
+
+
     }
 
     /**
@@ -68,7 +82,7 @@ public class MainFloat {
 
         File directory = new File(directoryPath);
         for (File file : directory.listFiles()) {
-            if (getSpamProbabilityOfFile(file.getAbsolutePath()).floatValue() > 0.5f) {
+            if (getSpamProbabilityOfFile(file.getAbsolutePath()).floatValue() > THRESHOLD) {
                 nOfSpam++;
             }
         }
@@ -175,7 +189,7 @@ public class MainFloat {
         float prWH = (float) hamBibliography.get(word) / (float) hamBibliography.keySet().size();
 
         // bayes formula for probability
-        float res = (prWS * probabilityOfSpam) / ((prWS * probabilityOfSpam) + (prWH * probabilityOfHam));
+        float res = (prWS * PROBABILITY_OF_SPAM) / ((prWS * PROBABILITY_OF_SPAM) + (prWH * PROBABILITY_OF_HAM));
         return res;
     }
 }
