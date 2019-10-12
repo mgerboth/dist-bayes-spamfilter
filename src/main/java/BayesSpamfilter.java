@@ -10,16 +10,24 @@ import java.util.Map;
 
 public class BayesSpamfilter {
 
-    private static final float PROBABILITY_OF_SPAM = 0.7f;
+    private static final float PROBABILITY_OF_SPAM = 0.75f;
+    private static final float PROBABILITY_OF_HAM = 1 - PROBABILITY_OF_SPAM;
 
-    private static final float PROBABILITY_OF_HAM = 0.3f;
+    private static final float THRESHOLD = 0.5f;
 
-    public static final float THRESHOLD = 0.5f;
+    private static final float ALPHA = 0.02f;
 
-    public static final float ALPHA = 0.02f;
+    private static Map<String, Float> spamBibliography;
+    private static Map<String, Float> hamBibliography;
 
-    static Map<String, Integer> spamBibliography;
-    static Map<String, Integer> hamBibliography;
+    private static String HAM_PATH = "./src/main/resources/ham-anlern";
+    private static String SPAM_PATH = "./src/main/resources/spam-anlern";
+
+    private static String HAM_TEST = "./src/main/resources/ham-test";
+    private static String SPAM_TEST = "./src/main/resources/spam-test";
+
+    private static String HAM_CALIBRATION = "./src/main/resources/ham-kallibrierung";
+    private static String SPAM_CALIBRATION = "./src/main/resources/spam-kallibrierung";
 
 
     /**
@@ -28,32 +36,47 @@ public class BayesSpamfilter {
      */
     public static void main(String[] args) throws Exception {
 
-        String hamPath = "./src/main/resources/ham-anlern";
-        String spamPath = "./src/main/resources/spam-anlern";
+        spamBibliography = new HashMap<>();
+        hamBibliography = new HashMap<>();
 
-        hamBibliography = getWordBibliography(hamPath);
-        spamBibliography = getWordBibliography(spamPath);
+        setWordBibliography(HAM_PATH, hamBibliography);
+        setWordBibliography(SPAM_PATH, spamBibliography);
 
         balanceBibliographies();
 
-        String hamTest = "./src/main/resources/ham-test";
-        String spamTest = "./src/main/resources/spam-test";
+        float filesInSpam = getNumberOfFilesInDirectory(SPAM_TEST);
+        float filesInHam = getNumberOfFilesInDirectory(HAM_TEST);
 
-        float spamInSpam = getNumberOfSpamInDirectory(spamTest);
-        float spamInHam = getNumberOfSpamInDirectory(hamTest);
-
-        float filesInSpam = getNumberOfFilesInDirectory(spamTest);
-        float filesInHam = getNumberOfFilesInDirectory(hamTest);
+        float spamInSpam = getNumberOfSpamInDirectory(SPAM_TEST);
+        float spamInHam = getNumberOfSpamInDirectory(HAM_TEST);
 
         float percentageOfSpamInSpam = spamInSpam / filesInSpam * 100;
         float percentageOfSpamInHam = spamInHam / filesInHam * 100;
 
 
-        System.out.println(percentageOfSpamInHam + "% Spam in '" + hamTest + "'.");
-        System.out.println(percentageOfSpamInSpam + "% Spam in '" + spamTest + "'.");
+        System.out.println("Spam as Spam detected: " + spamInSpam +" / " +filesInSpam + "  ## Spam in Ham detected: " + spamInHam+ " / " + filesInHam);
+        System.out.println(percentageOfSpamInHam + "% Spam in '" + HAM_TEST + "'.");
+        System.out.println(percentageOfSpamInSpam + "% Spam in '" + SPAM_TEST + "'.");
+
+        // Run Calibration
+
+        setWordBibliography(HAM_CALIBRATION, hamBibliography);
+        setWordBibliography(SPAM_CALIBRATION, spamBibliography);
+
+        balanceBibliographies();
+
+        // Run Tests after Calibration
+        spamInSpam = getNumberOfSpamInDirectory(SPAM_TEST);
+        spamInHam = getNumberOfSpamInDirectory(HAM_TEST);
+
+
+        percentageOfSpamInSpam = spamInSpam / filesInSpam * 100;
+        percentageOfSpamInHam = spamInHam / filesInHam * 100;
+
+        System.out.println("Spam as Spam detected: " + spamInSpam +" / " +filesInSpam + "  ## Spam in Ham detected: " + spamInHam+ " / " + filesInHam);
+        System.out.println(percentageOfSpamInHam + "% Spam in '" + HAM_TEST + "'.");
+        System.out.println(percentageOfSpamInSpam + "% Spam in '" + SPAM_TEST + "'.");
         System.out.println("Alpha = " + ALPHA + ", Schwellenwert = " + THRESHOLD);
-
-
     }
 
     /**
@@ -62,12 +85,12 @@ public class BayesSpamfilter {
     private static void balanceBibliographies() {
         for (String word : hamBibliography.keySet()) {
             if (!spamBibliography.containsKey(word)) {
-                spamBibliography.put(word, 1);
+                spamBibliography.put(word, ALPHA);
             }
         }
         for (String word : spamBibliography.keySet()) {
             if (!hamBibliography.containsKey(word)) {
-                hamBibliography.put(word, 1);
+                hamBibliography.put(word, ALPHA);
             }
         }
     }
@@ -109,7 +132,7 @@ public class BayesSpamfilter {
      * @param text
      * @return a normalized word to only lowercase chars
      */
-    private static String normalizeText(String text){
+    private static String normalizeText(String text) {
         String escaped = text.replaceAll("[^A-Za-z]", " ").toLowerCase();
         return escaped;
     }
@@ -119,10 +142,7 @@ public class BayesSpamfilter {
      * @return Map with normalized words of each file in the directory
      * @throws IOException
      */
-    private static Map<String, Integer> getWordBibliography(String directoryPath) throws IOException {
-        Map<String, Integer> bibliography = new HashMap<String, Integer>();
-        //Map<String, Integer> limitedBibliography = new HashMap<String, Integer>();
-
+    private static void setWordBibliography(String directoryPath, Map<String, Float> bibliography) throws IOException {
         // Find all words and put them in map
         File directory = new File(directoryPath);
         for (File file : directory.listFiles()) {
@@ -137,14 +157,12 @@ public class BayesSpamfilter {
                         if (bibliography.containsKey(word)) {
                             bibliography.put(word, bibliography.get(word) + 1);
                         } else {
-                            bibliography.put(word, 1);
+                            bibliography.put(word, 1.0f);
                         }
                     }
                 }
             }
         }
-
-        return bibliography;
     }
 
 
@@ -182,7 +200,7 @@ public class BayesSpamfilter {
 
     /**
      * @param word
-     * @return the probability of a word beeing spam
+     * @return the probability of a word being spam
      */
     private static float getSpamProbabilityOfWord(String word) {
         float prWS = (float) spamBibliography.get(word) / (float) spamBibliography.keySet().size();
