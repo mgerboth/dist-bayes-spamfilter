@@ -12,13 +12,8 @@ public class BayesSpamfilter {
 
     private static final float PROBABILITY_OF_SPAM = 0.75f;
     private static final float PROBABILITY_OF_HAM = 1 - PROBABILITY_OF_SPAM;
-
     private static final float THRESHOLD = 0.5f;
-
     private static final float ALPHA = 0.02f;
-
-    private static Map<String, Float> spamBibliography;
-    private static Map<String, Float> hamBibliography;
 
     private static String HAM_PATH = "./src/main/resources/ham-anlern";
     private static String SPAM_PATH = "./src/main/resources/spam-anlern";
@@ -30,7 +25,13 @@ public class BayesSpamfilter {
     private static String SPAM_CALIBRATION = "./src/main/resources/spam-kallibrierung";
 
 
+    private static Map<String, Float> spamBibliography;
+    private static Map<String, Float> hamBibliography;
+
+
     /**
+     * Main Method to run the BayesSpamfilter, shows the evaluation results in the terminal.
+     *
      * @param args
      * @throws Exception
      */
@@ -42,6 +43,7 @@ public class BayesSpamfilter {
         setWordBibliography(HAM_PATH, hamBibliography);
         setWordBibliography(SPAM_PATH, spamBibliography);
 
+        // Balance Bibliography Librarys after anlern-phase
         balanceBibliographies();
 
         float filesInSpam = getNumberOfFilesInDirectory(SPAM_TEST);
@@ -53,8 +55,8 @@ public class BayesSpamfilter {
         float percentageOfSpamInSpam = spamInSpam / filesInSpam * 100;
         float percentageOfSpamInHam = spamInHam / filesInHam * 100;
 
-
-        System.out.println("Spam as Spam detected: " + spamInSpam +" / " +filesInSpam + "  ## Spam in Ham detected: " + spamInHam+ " / " + filesInHam);
+        System.out.println("########### lern with anlern files ############");
+        System.out.println("Spam as Spam detected: " + (int) spamInSpam + " / " + (int) filesInSpam + "  ## Spam in Ham detected: " + (int) spamInHam + " / " + (int) filesInHam);
         System.out.println(percentageOfSpamInHam + "% Spam in '" + HAM_TEST + "'.");
         System.out.println(percentageOfSpamInSpam + "% Spam in '" + SPAM_TEST + "'.");
 
@@ -63,24 +65,28 @@ public class BayesSpamfilter {
         setWordBibliography(HAM_CALIBRATION, hamBibliography);
         setWordBibliography(SPAM_CALIBRATION, spamBibliography);
 
+        // Rebalance after the calibration
         balanceBibliographies();
 
-        // Run Tests after Calibration
+        // Re-Run Tests after Calibration
         spamInSpam = getNumberOfSpamInDirectory(SPAM_TEST);
         spamInHam = getNumberOfSpamInDirectory(HAM_TEST);
-
 
         percentageOfSpamInSpam = spamInSpam / filesInSpam * 100;
         percentageOfSpamInHam = spamInHam / filesInHam * 100;
 
-        System.out.println("Spam as Spam detected: " + spamInSpam +" / " +filesInSpam + "  ## Spam in Ham detected: " + spamInHam+ " / " + filesInHam);
+        System.out.println();
+        System.out.println("########### improve algorithm with calibration files ############");
+        System.out.println("Spam as Spam detected: " + (int) spamInSpam + " / " + (int) filesInSpam + "  ## Spam in Ham detected: " + (int) spamInHam + " / " + (int) filesInHam);
         System.out.println(percentageOfSpamInHam + "% Spam in '" + HAM_TEST + "'.");
         System.out.println(percentageOfSpamInSpam + "% Spam in '" + SPAM_TEST + "'.");
+        System.out.println();
         System.out.println("Alpha = " + ALPHA + ", Schwellenwert = " + THRESHOLD);
     }
 
     /**
-     *
+     * 2b) balances the generated Bibliographie lists so that missing words are added
+     * in the opposite Bibliographie library. ALPHA is used for masking these words.
      */
     private static void balanceBibliographies() {
         for (String word : hamBibliography.keySet()) {
@@ -168,7 +174,8 @@ public class BayesSpamfilter {
 
     /**
      * @param filePath
-     * @return
+     * @return the probability of the whole file that is being tested. Cals for each word in file the
+     * method getSpamProbabilityOfWord and sums the probability up with the formula stated in wiki: "Combining individual probabilities"
      * @throws IOException
      */
     private static BigDecimal getSpamProbabilityOfFile(String filePath) throws IOException {
@@ -200,7 +207,7 @@ public class BayesSpamfilter {
 
     /**
      * @param word
-     * @return the probability of a word being spam
+     * @return the probability of a word being spam after the definition of bayes formula
      */
     private static float getSpamProbabilityOfWord(String word) {
         float prWS = (float) spamBibliography.get(word) / (float) spamBibliography.keySet().size();
