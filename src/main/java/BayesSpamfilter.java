@@ -10,10 +10,10 @@ import java.util.Map;
 
 public class BayesSpamfilter {
 
-    private static final float PROBABILITY_OF_SPAM = 0.75f;
+    private static final float PROBABILITY_OF_SPAM = 0.78f;
     private static final float PROBABILITY_OF_HAM = 1 - PROBABILITY_OF_SPAM;
     private static final float THRESHOLD = 0.5f;
-    private static final float ALPHA = 0.02f;
+    private static final float ALPHA = 0.09f;
 
     private static String HAM_PATH = "./src/main/resources/ham-anlern";
     private static String SPAM_PATH = "./src/main/resources/spam-anlern";
@@ -31,7 +31,6 @@ public class BayesSpamfilter {
 
     /**
      * Main Method to run the BayesSpamfilter, shows the evaluation results in the terminal.
-     *
      * @param args
      * @throws Exception
      */
@@ -44,6 +43,7 @@ public class BayesSpamfilter {
         setWordBibliography(SPAM_PATH, spamBibliography);
 
         // Balance Bibliography Librarys after anlern-phase
+        // 2b see method description
         balanceBibliographies();
 
         float filesInSpam = getNumberOfFilesInDirectory(SPAM_TEST);
@@ -87,6 +87,9 @@ public class BayesSpamfilter {
     /**
      * 2b) balances the generated Bibliographie lists so that missing words are added
      * in the opposite Bibliographie library. ALPHA is used for masking these words.
+     * Reason for balancing is to prevent a multiplication of 0/x for each word that does not exist
+     * in the corresponding bibliography. Furthermore, it would just multiply and stay at 0 even if
+     * the rating of other words are higher.
      */
     private static void balanceBibliographies() {
         for (String word : hamBibliography.keySet()) {
