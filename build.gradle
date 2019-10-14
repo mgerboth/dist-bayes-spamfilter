@@ -1,17 +1,12 @@
-
-plugins {
-	id 'java'
-	id 'application'
-	id 'idea'		// optional (to generate IntelliJ IDEA project files)
-	id 'eclipse'	// optional (to generate Eclipse project files)
-}
+apply plugin: 'java'
+apply plugin: 'application'
 
 mainClassName  = "main.BayesSpamfilter"
 
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+compileJava.options.encoding = 'UTF-8'
 
-repositories {
-    jcenter()
-}
 sourceSets {
 	main {
 		resources {
@@ -21,7 +16,3 @@ sourceSets {
 }
 
 
-sourceCompatibility = 11
-targetCompatibility = 11
-compileJava.options.encoding = 'UTF-8'
-compileTestJava.options.encoding = 'UTF-8'
